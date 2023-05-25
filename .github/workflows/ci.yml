@@ -1,0 +1,15 @@
+name: pull request comment
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+
+jobs:
+  SayHello:
+    if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: say hello
+        if: contains(github.event.comment.body, '/hi')
+        run: |
+          echo say hello

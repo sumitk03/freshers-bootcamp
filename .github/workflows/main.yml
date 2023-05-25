@@ -1,0 +1,12 @@
+name: pull request comment
+
+on: [ push ]
+
+jobs:
+  SayHello:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: run e2e
+        if: contains(github.event.comment.body, '/run-e2e')
+        run: |
+          echo running e2e

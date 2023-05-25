@@ -1,0 +1,28 @@
+name: pull request comment
+
+on:
+  issue_comment:
+    types: [created, edited, deleted]
+
+jobs:
+  SayHello:
+    if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Github API Request
+        id: request
+        uses: octokit/request-action@v2.0.2
+        with:
+          route: ${{ github.event.issue.pull_request.url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout PR Branch
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
+          ref: ${{fromJson(steps.request.outputs.data).head.ref}}
+      - name: run e2e
+        if: contains(github.event.comment.body, '/run-e2e')
+        run: |
+          echo running e2e

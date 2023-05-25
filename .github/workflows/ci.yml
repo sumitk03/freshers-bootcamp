@@ -7,7 +7,7 @@ on:
 jobs:
   SayHello:
     if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
-    runs-on: [self-hosted]
+    runs-on: [ubuntu-latest]
     steps:
       - name: Github API Request
         id: request

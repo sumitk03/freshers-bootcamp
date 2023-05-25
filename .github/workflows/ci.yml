@@ -9,19 +9,26 @@ jobs:
     if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
     runs-on: [ubuntu-latest]
     steps:
-      - name: Github API Request
-        id: request
-        uses: octokit/request-action@v2.0.2
+      - uses: actions/github-script@v3
+        id: get-pr
         with:
-          route: ${{ github.event.issue.pull_request.url }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Checkout PR Branch
-        uses: actions/checkout@v3
+          script: |
+            const request = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            }
+            core.info(`Getting PR #${request.pull_number} from ${request.owner}/${request.repo}`)
+            try {
+              const result = await github.pulls.get(request)
+              return result.data
+            } catch (err) {
+              core.setFailed(`Request failed with error ${err}`)
+            }
+      - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
-          ref: ${{fromJson(steps.request.outputs.data).head.ref}}
+          repository: ${{ fromJSON(steps.get-pr.outputs.result).head.repo.full_name }}
+          ref: ${{ fromJSON(steps.get-pr.outputs.result).head.sha }} # or .head.ref for branch name
       - name: run e2e
         if: contains(github.event.comment.body, '/run-e2e')
         run: |

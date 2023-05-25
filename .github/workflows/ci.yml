@@ -11,35 +11,25 @@ jobs:
     if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
     runs-on: [ubuntu-latest]
     steps:
-      - uses: khan/pull-request-comment-trigger@master
-        id: check
-        with:
-          trigger: 'TRIGGER WORKFLOW'
-          reaction: rocket
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: GitHub API Request
-        if: steps.check.outputs.triggered == 'true'
+      - name: Github API Request
         id: request
-        uses: octokit/request-action@v2.0.0
+        uses: octokit/request-action@v2.0.2
         with:
           route: ${{ github.event.issue.pull_request.url }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get PR informations
-        if: steps.check.outputs.triggered == 'true'
         id: pr_data
         run: |
-          echo "::set-output name=branch::${{ fromJson(steps.request.outputs.data).head.ref }}"
-          echo "::set-output name=repo_name::${{ fromJson(steps.request.outputs.data).base.repo.full_name }}"
-          echo "::set-output name=repo_clone_url::${{ fromJson(steps.request.outputs.data).base.repo.clone_url }}"
-          echo "::set-output name=repo_ssh_url::${{ fromJson(steps.request.outputs.data).base.repo.ssh_url }}"
-      - name: clone branch of PR
-        if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
+          echo "::set-output name=repo_name::${{ fromJson(steps.request.outputs.data).head.repo.full_name }}"
+          echo "::set-output name=repo_clone_url::${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}"
+          echo "::set-output name=repo_ssh_url::${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}"
+      - name: Checkout PR Branch
+        uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ steps.pr_data.outputs.branch }}
+          repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
+          ref: ${{fromJson(steps.request.outputs.data).head.ref}}
       - name: run e2e
         if: contains(github.event.comment.body, '/run-e2e')
         run: |
